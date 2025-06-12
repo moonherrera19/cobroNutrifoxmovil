@@ -58,7 +58,7 @@ npx expo start
 Abrir en Expo Go
 
 📥 Descargar APK (.aab):
-https://expo.dev/artifacts/eas/wakfodJQpUYV2HP
+https://expo.dev/artifacts/eas/5UT2WenUNgXT9LzynQWYxE.apk
 
 👩‍💻 Autor
 Desarrollado por Monserrat Herrera

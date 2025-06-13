@@ -12,8 +12,13 @@ import { FIRESTORE_DB } from "./firebaseConfig";
 // ✅ Registrar cobro de beca
 export const registrarCobroBeca = async (alumno) => {
   try {
-    if (!alumno?.numero_control || !alumno?.nombre) {
-      throw new Error("Datos del alumno incompletos");
+    if (
+      !alumno ||
+      !alumno.numero_control ||
+      !alumno.nombre ||
+      !alumno.carrera
+    ) {
+      throw new Error("Datos del alumno incompletos o inválidos.");
     }
 
     const hoy = new Date();
@@ -49,7 +54,9 @@ export const registrarCobroBeca = async (alumno) => {
 export const fetchCurrentUserData = async () => {
   try {
     const user = getAuth().currentUser;
-    if (!user) throw new Error("Usuario no autenticado");
+    if (!user || !user.email) {
+      throw new Error("Usuario no autenticado o sin correo.");
+    }
 
     const q = query(
       collection(FIRESTORE_DB, "user"),

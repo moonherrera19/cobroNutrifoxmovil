@@ -27,6 +27,8 @@ import {
   limit,
 } from "firebase/firestore";
 import { LineChart } from "react-native-chart-kit";
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import * as FileSystem from 'expo-file-system';
 
 const LIMITE_BECAS_DIARIO = 70;
 const screenWidth = Dimensions.get("window").width;
@@ -93,7 +95,7 @@ const HomeCafeteria = () => {
   const cobrarBeca = async () => {
     try {
       if (contador >= LIMITE_BECAS_DIARIO) {
-        Alert.alert("Limite alcanzado", "Ya se cobraron las 70 becas del dia.");
+        Alert.alert("Límite alcanzado", "Ya se cobraron las 70 becas del día.");
         return;
       }
 
@@ -109,20 +111,69 @@ const HomeCafeteria = () => {
       const snapshot = await getDocs(q);
 
       if (!snapshot.empty) {
-        Alert.alert(" Ya cobrada", "Este alumno ya recibido beca hoy.");
+        Alert.alert("Ya cobrada", "Este alumno ya recibió beca hoy.");
         return;
       }
 
       await registrarCobroBeca(alumno);
-      mostrarToast(`\u2705 ${alumno.nombre} - beca cobrada`);
+      mostrarToast(`✅ ${alumno.nombre} - beca cobrada`);
       setContador((prev) => prev + 1);
       await cargarGraficaSemanal();
       resetear();
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     } catch (e) {
-      Alert.alert("Error", "No se pudo registrar el cobro");
+      console.error("❌ Error real:", e.message);
+      Alert.alert("Error", e.message || "No se pudo registrar el cobro");
     }
   };
+  const generarReportePDF = async () => {
+  const hace7dias = new Date();
+  hace7dias.setDate(hace7dias.getDate() - 6);
+  hace7dias.setHours(0, 0, 0, 0);
+
+  const q = query(
+    collection(FIRESTORE_DB, "becas"),
+    where("fecha", ">=", Timestamp.fromDate(hace7dias)),
+    orderBy("fecha", "desc")
+  );
+
+  const snapshot = await getDocs(q);
+  const datos = snapshot.docs.map((doc) => doc.data());
+
+  const agrupado = {};
+
+  datos.forEach((item) => {
+    const fecha = item.fecha.toDate().toLocaleDateString("es-MX");
+    if (!agrupado[fecha]) agrupado[fecha] = [];
+    agrupado[fecha].push(item);
+  });
+
+  let html = `
+    <h1 style="text-align:center;">Reporte Semanal de Becas</h1>
+  `;
+
+  Object.keys(agrupado).forEach((fecha) => {
+    html += `<h2>${fecha}</h2><ul>`;
+    agrupado[fecha].forEach((item) => {
+      html += `<li><strong>${item.nombre}</strong> - ${item.numero_control} - ${item.carrera}</li>`;
+    });
+    html += `</ul>`;
+  });
+
+  try {
+    const file = await RNHTMLtoPDF.convert({
+      html,
+      fileName: `Reporte_Becas_${Date.now()}`,
+      directory: 'Documents',
+    });
+
+    Alert.alert("✅ PDF generado", `Guardado en: ${file.filePath}`);
+    console.log("📄 PDF path:", file.filePath);
+  } catch (err) {
+    console.error("❌ Error al generar PDF:", err);
+    Alert.alert("Error", "No se pudo generar el PDF.");
+  }
+};
 
   const obtenerResumenSemanal = (becas) => {
     const resumen = { lun: 0, mar: 0, mier: 0, jue: 0, vie: 0, sab: 0, dom: 0 };
@@ -200,13 +251,27 @@ const HomeCafeteria = () => {
 
         {contador >= LIMITE_BECAS_DIARIO && (
           <View style={styles.alertaRoja}>
-            <Text style={styles.alertaTexto}>\u26a0\ufe0f L\u00edmite diario de becas alcanzado</Text>
+            <Text style={styles.alertaTexto}>⚠️ Límite diario de becas alcanzado</Text>
           </View>
         )}
 
         <Text style={styles.subTitle}>Últimos Cobros Registrados</Text>
-        {historial.map((item, index) => (
-          <View key={index.toString()} style={styles.historialCard}>
+
+        {/* Primeras 3 tarjetas con diseño especial */}
+        <View style={{ marginTop: 10 }}>
+          {historial.slice(0, 3).map((item, index) => (
+            <View key={`preview-${index}`} style={styles.previewCard}>
+              <Text style={styles.previewNombre}>✅ {item.nombre}</Text>
+              <Text style={styles.previewDetalles}>
+                {item.numero_control} • {item.carrera}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Siguientes 7 tarjetas clásicas */}
+        {historial.slice(3).map((item, index) => (
+          <View key={`hist-${index}`} style={styles.historialCard}>
             <Text style={styles.cardTitle}>{item.nombre}</Text>
             <Text style={styles.cardDetail}>Control: {item.numero_control}</Text>
             <Text style={styles.cardDetail}>Carrera: {item.carrera}</Text>
@@ -216,19 +281,19 @@ const HomeCafeteria = () => {
 
         {Object.keys(resumenSemanal).length > 0 && (
           <>
-            <Text style={styles.subTitle}>Cobros por semana </Text>
+            <Text style={styles.subTitle}>Cobros por semana</Text>
             <LineChart
               data={{
-                labels: ["Lun", "Mar", "Mi\u00e9", "Jue", "Vie", "S\u00e1b", "Dom"],
+                labels: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
                 datasets: [
                   {
                     data: [
                       resumenSemanal["lun"] || 0,
                       resumenSemanal["mar"] || 0,
-                      resumenSemanal["mi\u00e9"] || 0,
+                      resumenSemanal["mié"] || 0,
                       resumenSemanal["jue"] || 0,
                       resumenSemanal["vie"] || 0,
-                      resumenSemanal["s\u00e1b"] || 0,
+                      resumenSemanal["sáb"] || 0,
                       resumenSemanal["dom"] || 0,
                     ],
                   },
@@ -252,6 +317,9 @@ const HomeCafeteria = () => {
               bezier
               style={{ marginVertical: 8, borderRadius: 16 }}
             />
+              
+  
+
           </>
         )}
       </ScrollView>
@@ -314,6 +382,13 @@ const styles = StyleSheet.create({
     borderColor: "#f5c6cb",
     borderWidth: 1,
   },
+  btnReporte: {
+  backgroundColor: "#443737",
+  padding: 12,
+  borderRadius: 8,
+  marginTop: 10,
+  alignItems: "center",
+},
   alertaTexto: {
     color: "#721c24",
     fontWeight: "bold",
@@ -359,6 +434,27 @@ const styles = StyleSheet.create({
   btnText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  previewCard: {
+    backgroundColor: "#272121",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  previewNombre: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  previewDetalles: {
+    fontSize: 14,
+    color: "#ccc",
+    marginTop: 2,
   },
 });
 

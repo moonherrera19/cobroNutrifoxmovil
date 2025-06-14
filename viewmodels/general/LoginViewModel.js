@@ -16,6 +16,8 @@ export const useLoginViewModel = (navigation) => {
         navigation.replace("HomeCafeteria");
       } else if (userData.rol === "alumno") {
         navigation.replace("HomeAlumno");
+      } else if (userData.rol === "admin") {
+        navigation.replace("HomeAdmin");
       } else {
         alert("Rol no autorizado.");
       }

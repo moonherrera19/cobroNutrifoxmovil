@@ -4,6 +4,7 @@ import LogIn from "../views/general/Log_In";
 import HomeCafeteria from "../views/workers/HomeCafeteria";
 import HomeAlumno from "../views/alumnos/HomeAlumno";
 import RegisterScreen from "../views/general/RegisterScreen";
+import HomeAdmin from "../views/admin/HomeAdmin";
 
 const Stack = createNativeStackNavigator();
 
@@ -14,6 +15,7 @@ const Navigation = () => (
     <Stack.Screen name="HomeCafeteria" component={HomeCafeteria} />
     <Stack.Screen name="HomeAlumno" component={HomeAlumno} />
     <Stack.Screen name="Register" component={RegisterScreen} />
+    <Stack.Screen name="HomeAdmin" component={HomeAdmin} /> 
 
   </Stack.Navigator>
 );

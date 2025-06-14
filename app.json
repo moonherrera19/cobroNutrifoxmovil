@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "CobroBecasApp",
+    "name": "NutriFOX móvil",
     "slug": "CobroBecasApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.jpeg",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -19,10 +19,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.moon192003.CobroBecasApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2da2950d-cc28-49a0-a455-5d369e9cf7b7"
+      }
+    },
+    "owner": "herre19"
   }
 }

@@ -29,6 +29,10 @@ import {
 import { LineChart } from "react-native-chart-kit";
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import * as FileSystem from 'expo-file-system';
+import * as Linking from "expo-linking";
+import { descargarReporteBecas } from "../../services/descargarReporteBecas";
+
+
 
 const LIMITE_BECAS_DIARIO = 70;
 const screenWidth = Dimensions.get("window").width;
@@ -79,10 +83,31 @@ const HomeCafeteria = () => {
     }, [])
   );
 
-  const cerrarSesion = async () => {
+const cerrarSesion = async () => {
+  try {
     await signOut(FIREBASE_AUTH);
     navigation.replace("LogIn");
-  };
+  } catch (error) {
+    console.error("❌ Error al cerrar sesión:", error.message);
+    Alert.alert("Error", "No se pudo cerrar la sesión");
+  }
+};
+
+  const descargarReporte = async () => {
+  try {
+    const nombre = "reporte_becas_XXXXXXXXXX.pdf"; // Aquí pones el nombre real generado
+    const url = `https://<TU-BACKEND-RENDER>/becas/descargar/${nombre}`;
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      Linking.openURL(url);
+    } else {
+      Alert.alert("No se pudo abrir el enlace");
+    }
+  } catch (e) {
+    console.error("❌ Error al abrir PDF:", e.message);
+    Alert.alert("Error al abrir PDF");
+  }
+};
 
   const mostrarToast = (mensaje) => {
     if (Platform.OS === "android") {
@@ -199,23 +224,27 @@ const HomeCafeteria = () => {
     setResumenSemanal(obtenerResumenSemanal(datos));
   };
 
+ 
   return (
-    <ImageBackground
-      source={require("../../assets/background.jpg")}
-      style={styles.background}
-      resizeMode="cover"
-    >
+  <ImageBackground
+    source={require("../../assets/background.jpg")}
+    style={styles.background}
+    resizeMode="cover"
+  >
+    <View style={{ flex: 1 }}>
+      {/* BOTÓN FIJO ARRIBA */}
+      <View style={styles.topRightButton}>
+        <TouchableOpacity style={styles.btnCerrarSesion} onPress={cerrarSesion}>
+          <Text style={styles.btnText}>Cerrar</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* CONTENIDO PRINCIPAL */}
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.topRightButton}>
-          <TouchableOpacity style={styles.btnCerrarSesion} onPress={cerrarSesion}>
-            <Text style={styles.btnText}>Cerrar</Text>
-          </TouchableOpacity>
-        </View>
-
         <Text style={styles.title}>Cobro de Beca</Text>
 
         <TextInput
@@ -256,8 +285,6 @@ const HomeCafeteria = () => {
         )}
 
         <Text style={styles.subTitle}>Últimos Cobros Registrados</Text>
-
-        {/* Primeras 3 tarjetas con diseño especial */}
         <View style={{ marginTop: 10 }}>
           {historial.slice(0, 3).map((item, index) => (
             <View key={`preview-${index}`} style={styles.previewCard}>
@@ -269,7 +296,6 @@ const HomeCafeteria = () => {
           ))}
         </View>
 
-        {/* Siguientes 7 tarjetas clásicas */}
         {historial.slice(3).map((item, index) => (
           <View key={`hist-${index}`} style={styles.historialCard}>
             <Text style={styles.cardTitle}>{item.nombre}</Text>
@@ -317,24 +343,32 @@ const HomeCafeteria = () => {
               bezier
               style={{ marginVertical: 8, borderRadius: 16 }}
             />
-              
-  
 
+           
           </>
         )}
       </ScrollView>
-    </ImageBackground>
-  );
+    </View>
+  </ImageBackground>
+);
+
 };
 
 const styles = StyleSheet.create({
   background: { flex: 1 },
-  scrollContent: { padding: 20, paddingBottom: 60 },
+  scrollContent: { padding: 20,paddingTop: 80, paddingBottom: 60 },
   topRightButton: {
     flexDirection: "row",
     justifyContent: "flex-end",
     marginBottom: 10,
   },
+  topRightButton: {
+  position: "absolute",
+  top: 40,
+  right: 20,
+  zIndex: 10,
+},
+
   title: {
     fontSize: 24,
     fontWeight: "bold",
@@ -382,13 +416,6 @@ const styles = StyleSheet.create({
     borderColor: "#f5c6cb",
     borderWidth: 1,
   },
-  btnReporte: {
-  backgroundColor: "#443737",
-  padding: 12,
-  borderRadius: 8,
-  marginTop: 10,
-  alignItems: "center",
-},
   alertaTexto: {
     color: "#721c24",
     fontWeight: "bold",
@@ -402,6 +429,19 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     borderWidth: 1,
   },
+  btnReporte: {
+  backgroundColor: "#FF4D00",
+  marginTop: 16,
+  marginHorizontal: 20,
+  paddingVertical: 12,
+  borderRadius: 12,
+  alignItems: "center",
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 3,
+  elevation: 3,
+},
   cardTitle: {
     fontSize: 16,
     fontWeight: "bold",
@@ -446,6 +486,18 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+    btnGenerarReporte: {
+    backgroundColor: "#272121", // Negro elegante
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
   previewNombre: {
     fontSize: 16,
     fontWeight: "bold",
@@ -456,6 +508,7 @@ const styles = StyleSheet.create({
     color: "#ccc",
     marginTop: 2,
   },
+  
 });
 
 export default HomeCafeteria;

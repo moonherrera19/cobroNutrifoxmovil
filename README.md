@@ -58,7 +58,8 @@ npx expo start
 Abrir en Expo Go
 
 📥 Descargar APK (.aab):
-https://expo.dev/artifacts/eas/5UT2WenUNgXT9LzynQWYxE.apk
+https://expo.dev/accounts/herre19/projects/CobroBecasApp/builds/28765ff2-1538-4cfb-98b6-bf0cf37b3c77
+
 
 👩‍💻 Autor
 Desarrollado por Monserrat Herrera
